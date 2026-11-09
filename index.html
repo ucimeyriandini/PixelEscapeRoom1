@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pixel Escape Room: Misi Bersama</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#1d1b2e;--stone:#2e2b47;--stone2:#4a4573;--ink:#f1e3c0;--torch:#ff9f43;--moss:#6bbf59;--blood:#d6455d;--mute:#a29ec4;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*:before,*:after{box-sizing:inherit}
+body{margin:0;background:var(--bg);background-image:repeating-linear-gradient(0deg,transparent 0 31px,#25223a 31px 32px),repeating-linear-gradient(90deg,transparent 0 63px,#25223a 63px 64px);color:var(--ink);font:19px/1.45 'Pixelify Sans',ui-monospace,monospace;min-height:100vh}
+h1,h2,h3,.px{font-family:'Press Start 2P',ui-monospace,monospace;line-height:1.6;margin:0}
+h1{font-size:16px;color:var(--torch)}h2{font-size:13px}
+.wrap{max-width:860px;margin:0 auto;padding:16px 14px calc(24px + env(safe-area-inset-bottom,0px))}
+.mu{color:var(--mute);margin:4px 0}
+.panel{background:var(--stone);border:4px solid var(--ink);box-shadow:6px 6px 0 #0d0b18;padding:16px;margin-top:12px}
+.hud{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.tm{font-family:'Press Start 2P',monospace;font-size:13px}
+.words{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:12px 0 0;font-family:'Press Start 2P',monospace;font-size:10px}
+.words b{border:3px solid var(--ink);padding:6px 8px;background:#141222;color:var(--torch)}
+.words b.no{color:var(--mute);border-color:var(--stone2)}
+.objs{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:12px 0}
+.obj{font:inherit;color:var(--ink);background:var(--stone);border:4px solid var(--stone2);padding:10px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;box-shadow:0 4px 0 #14122288}
+.obj.done{border-color:var(--moss)}.obj.cur{border-color:var(--torch)}
+.obj small{color:var(--mute);font-size:15px}.obj.done small{color:var(--moss)}
+.btn{font:inherit;font-weight:700;color:var(--bg);background:var(--torch);border:3px solid var(--ink);padding:10px 14px;margin:4px 6px 4px 0;cursor:pointer;box-shadow:0 4px 0 #8a4d12}
+.btn:active{transform:translateY(4px);box-shadow:none}
+.btn.alt{background:var(--stone2);color:var(--ink);box-shadow:0 4px 0 #1a1730}
+.obj:focus-visible,.btn:focus-visible,input:focus-visible,.lamp:focus-visible{outline:3px solid #fff;outline-offset:2px}
+input[type=text]{font:inherit;width:100%;padding:10px;background:#141222;color:var(--ink);border:3px solid var(--ink);margin:6px 0}
+.q{font-size:21px;border-left:6px solid var(--torch);padding:8px 12px;background:#241f3b;margin:10px 0}
+.hint{border:3px dashed var(--stone2);padding:8px 10px;margin:10px 0;color:var(--mute)}
+.err{color:var(--blood);min-height:1.4em;margin:2px 0}.ok{color:var(--moss);font-weight:700;margin:8px 0}
+.rule{border:3px dashed var(--stone2);padding:8px 12px;margin:10px 0;font-size:18px}
+.scene{display:flex;flex-wrap:wrap;gap:10px 14px;justify-content:center;align-items:flex-end;background:#141222;border:3px solid var(--ink);padding:14px;margin:10px 0}
+.row{display:flex;gap:12px;align-items:flex-end;justify-content:center;width:100%}
+.row .px{font-size:9px;color:var(--mute);min-width:60px}
+.lamps{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:10px 0}
+.lamp{font:inherit;font-size:14px;color:var(--ink);background:#141222;border:3px solid var(--stone2);padding:8px 2px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+.lamp.on{background:#4a3a10;border-color:#ffd84d;color:#ffd84d}
+.big{font-family:'Press Start 2P',monospace;font-size:20px;letter-spacing:4px;color:var(--torch);text-align:center;padding:14px 0;word-break:break-all}
+.seat{border:3px solid var(--stone2);background:#241f3b;width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P',monospace;font-size:12px;color:var(--mute)}
+ol{padding-left:22px;margin:8px 0}li{margin:4px 0}
+.shake{animation:shake .4s steps(4)}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+@media (prefers-reduced-motion:reduce){.shake{animation:none}}
+</style></head><body><div class="wrap"><div id="app"></div></div>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function px(rows,pal,s){let r='';rows.forEach((row,y)=>[...row].forEach((c,x)=>{if(pal[c])r+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${pal[c]}"/>`}));return `<svg viewBox="0 0 ${rows[0].length} ${rows.length}" width="${rows[0].length*s}" height="${rows.length*s}" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`}
+const IC={
+rak:px(['.BBBBBB.','BRRRRRRB','BRWWWWRB','BRRRRRRB','BRWWWWRB','BRRRRRRB','BBBBBBBB'],{B:'#6b3f1d',R:'#a8642b',W:'#f1e3c0'},5),
+lukis:px(['GGGGGGGG','GPPPPPPG','GPYYPPPG','GPYYPBBG','GPPPPBBG','GPPPPPPG','GGGGGGGG'],{G:'#ffd84d',P:'#3b5bdb',Y:'#fff6b0',B:'#6bbf59'},5),
+panel:px(['..YYY..','.YYYYY.','.YYYYY.','..GGG..','...G...','..GGG..','.GGGGG.'],{Y:'#ffd84d',G:'#8a8fa3'},5),
+sandi:px(['.WWWWWW.','WPPPPPPW','.WPPPPW.','.WPPPPW.','.WPPPPW.','WPPPPPPW','.WWWWWW.'],{W:'#c9a66b',P:'#f1e3c0'},5),
+meja:px(['BBBBBBBB','BKKKKKKB','BBBBBBBB','.B....B.','.B....B.'],{B:'#6b3f1d',K:'#a8642b'},6),
+peta:px(['WWWWWWW','WGGGGGW','WGXGGXW','WGGGXGW','WGXGGGW','WWWWWWW'],{W:'#c9a66b',G:'#f1e3c0',X:'#d6455d'},5),
+pintu:px(['..SSSSSS..','.SSSSSSSS.','SSDDDDDDSS','SSDDDDDDSS','SSDDDDDDSS','SSDDGGDDSS','SSDDGGDDSS','SSDDDDDDSS','SSSSSSSSSS'],{S:'#4a4573',D:'#8a5a2b',G:'#ffd84d'},5)};
+const CHEST=px(['.BBBBBBBB.','BKKKKKKKKB','BKKKKKKKKB','BBBBGGBBBB','BKKKGGKKKB','BKKKKKKKKB','BKKKKKKKKB','BBBBBBBBBB'],{B:'#6b3f1d',K:'#a8642b',G:'#ffd84d'},9);
+const ANI={s:[['.X...X.','..XXX..','XXXXXXX','..XXX..','.X...X.'],'#cfd3dc'],c:[['X.....X','XXXXXXX','XEXXXEX','XXXEXXX','.XXXXX.'],'#ff9f43'],b:[['..XX..','.XXXX.','XXEXXY','.XXXX.','..X.X.'],'#4fd1a5']};
+const ani=k=>px(ANI[k][0],{X:ANI[k][1],E:'#1d1b2e',Y:'#ffd84d'},5);
+const BK=[['P',4,1],['X',8,0],['A',3,1],['K',9,1],['Z',5,0],['S',2,1],['M',6,1],['L',1,0],['O',7,1]];
+const WARM=['#d6455d','#ff9f43','#ffd84d'],COOL=['#3b82f6','#4fd1a5','#b9a6ff'];
+const books=()=>`<svg viewBox="0 0 404 142" width="100%" style="max-width:520px" role="img" aria-label="Sembilan buku dengan tinggi, warna, dan huruf berbeda"><rect x="0" y="134" width="404" height="8" fill="#8a5a2b"/>${BK.map((b,i)=>{const H=12+b[1]*12,x=8+i*44,c=(b[2]?WARM:COOL)[i%3];return `<rect x="${x}" y="${134-H}" width="36" height="${H}" fill="${c}" stroke="#f1e3c0" stroke-width="2"/>${b[2]?`<rect x="${x}" y="${134-H+34}" width="36" height="6" fill="#fff"/>`:''}<text x="${x+18}" y="${134-H+24}" text-anchor="middle" font-family="'Press Start 2P',monospace" font-size="14" fill="#1d1b2e">${b[0]}</text>`}).join('')}</svg>`;
+const peta=()=>{let h='<div></div>'+[...'ABCDEF'].map(c=>`<div class="px" style="font-size:10px;color:var(--mute)">${c}</div>`).join('');const dc=['E2','A4','A3','F6'];for(let r=1;r<=6;r++){h+=`<div class="px" style="font-size:10px;color:var(--mute);align-self:center">${r}</div>`;for(let c=0;c<6;c++){const id='ABCDEF'[c]+r,st=id=='B5',d=dc.includes(id);h+=`<div class="seat" style="width:44px;height:44px;${st?'border-color:var(--torch);color:var(--torch)':d?'color:#ffd84d':''}" ${st?'aria-label="Mulai B5"':''}>${st?'S':d?'$':''}</div>`}}return `<div role="img" aria-label="Peta 6 kolom A sampai F dan 6 baris 1 sampai 6. S ada di B5." style="display:grid;grid-template-columns:24px repeat(6,44px);gap:3px;justify-items:center">${h}</div>`};
+const ZOO=[['s','c','b'],['b','b','c'],['s','s','b']];
+const RULES=['Lampu 1 dan Lampu 2 tidak sama keadaannya.','Tepat 4 lampu yang menyala.','Lampu 3 dan Lampu 7 selalu berlawanan.','Lampu 4 sama dengan Lampu 1.','Lampu 5 dan Lampu 6 sama keadaannya.','Lampu 2 dan Lampu 4 tidak menyala bersamaan.','Lampu 7 sama dengan Lampu 5.'];
+const TARGET='0100111';
+const ORD=['rak','lukis','panel','sandi','meja','peta'];
+const WD={rak:'MIMPI',lukis:'KERJA',panel:'NYATA',sandi:'MEMBUAT',meja:'SAMA',peta:'JADI'};
+const ANS={rak:'KOMPAS',lukis:'72',sandi:'LENTERA',meja:'ACBED',peta:'C3'};
+const PH='KERJASAMAMEMBUATMIMPIJADINYATA';
+const OB={rak:{n:'Rak Buku',h:'Pisahkan dulu buku yang diabaikan. Lalu bandingkan tinggi buku sisanya dengan teliti.'},lukis:{n:'Lukisan',h:'Hitung kaki tiap baris dulu. Baris 1 dan 3 dihitung dua kali.'},panel:{n:'Panel Lampu',h:'Mulai dari aturan yang paling pasti. Kombinasikan aturan 1, 4, dan 6 untuk menentukan Lampu 1, 2, dan 4.'},sandi:{n:'Gulungan Sandi',h:'Hitung huruf pada kata SANDI. Mundurkan tiap huruf sebanyak itu, misalnya F mundur 5 menjadi A.'},meja:{n:'Meja Jamuan',h:'Mulai dari petunjuk tentang Aji dan petunjuk tentang Budi dan Citra. Coba kedua kemungkinan posisi Aji.'},peta:{n:'Peta Harta',h:'Tandai posisi tiap langkah di kertas atau di kepala bersama. Kolom ditulis dengan huruf, baris dengan angka, dan baris 1 ada di atas.'},pintu:{n:'Pintu'}};
+const norm=s=>s.toUpperCase().replace(/[^A-Z0-9]/g,'');
+const fresh=()=>({ph:'start',g:'',t0:0,tt:0,solved:{},open:null,hints:0,shown:{},lamps:[0,0,0,0,0,0,0],msg:'',bad:false,early:0});
+let S=fresh(),T;
+const nS=()=>ORD.filter(k=>S.solved[k]).length;
+const clock=()=>{const s=Math.max(0,Math.floor(((S.ph=='win'?S.tt:Date.now())-S.t0)/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+function begin(){const g=$('#gn').value.trim();if(!g){S.msg='Isi nama grup dulu.';render();return}Object.assign(S,fresh(),{ph:'play',g,t0:Date.now()});render()}
+function openO(k){S.open=k;S.msg='';render()}
+function back(){S.open=null;S.msg='';render()}
+function hint(){if(!S.shown[S.open]){S.shown[S.open]=1;S.hints++}render()}
+function tog(i){S.lamps[i]^=1;S.msg='';render()}
+function check(){const k=S.open;let ok;
+if(k=='panel')ok=S.lamps.join('')==TARGET;
+else{const v=norm($('#ans').value);ok=k=='pintu'?v==PH:v==ANS[k]}
+if(!ok){S.msg=k=='panel'?'Susunan lampu belum cocok dengan semua aturan.':k=='pintu'?'Kalimatnya belum tepat. Coba susun ulang urutan katanya.':'Belum tepat. Diskusikan lagi bareng-bareng!';S.bad=true}
+else if(k=='pintu'){S.early=nS()<6?nS():0;S.ph='win';S.tt=Date.now();S.msg=''}
+else{S.solved[k]=1;S.msg=''}
+render()}
+function cp(){const i=$('#rs');i.select();try{navigator.clipboard.writeText(i.value)}catch(e){}}
+function again(){clearInterval(T);S=fresh();render()}
+function body(k){
+if(k=='rak')return `<div class="scene">${books()}</div><div class="q">Plakat di rak: "Abaikan buku bertanda biru, hijau, atau ungu. Urutkan buku berpita putih dari yang tertinggi ke yang terendah." Ketik kata yang terbentuk dari hurufnya.</div>`;
+if(k=='lukis')return `<div class="scene">${ZOO.map((r,i)=>`<div class="row"><span class="px">Baris ${i+1}</span>${r.map(ani).join('')}</div>`).join('')}</div><div class="q">Laba-laba punya 8 kaki, kucing 4 kaki, burung 2 kaki. Kaki hewan di baris 1 dan baris 3 dihitung dua kali. Berapa total hitungan kaki seluruh lukisan?</div>`;
+if(k=='panel')return `<div class="rule">Semua aturan harus terpenuhi sekaligus:<ol>${RULES.map(r=>`<li>${r}</li>`).join('')}</ol></div><div class="lamps">${S.lamps.map((v,i)=>`<button class="lamp ${v?'on':''}" onclick="tog(${i})" aria-pressed="${!!v}"><span class="px" style="font-size:10px">${i+1}</span>${v?'NYALA':'MATI'}</button>`).join('')}</div>`;
+if(k=='sandi')return `<div class="scene"><div class="big" aria-label="QJSYJWF">QJSYJWF</div></div><div class="q">Di gulungan tertulis: "Setiap huruf telah digeser maju sebanyak jumlah huruf pada kata SANDI. Mundurkan untuk membacanya." Ketik kata aslinya.</div>`;
+if(k=='meja')return `<div class="scene">${[1,2,3,4,5].map(n=>`<div class="seat">${n}</div>`).join('')}</div><div class="rule">Lima tamu duduk berjajar di kursi 1 sampai 5 (kiri ke kanan menurut layar): Aji, Budi, Citra, Dewi, Eko.<ol><li>Aji duduk di salah satu ujung.</li><li>Budi duduk tepat di sebelah kanan Citra.</li><li>Dewi tidak duduk bersebelahan dengan Aji.</li><li>Eko duduk bersebelahan dengan Budi dan juga dengan Dewi.</li></ol></div><div class="q">Ketik huruf pertama nama tamu dari kursi 1 sampai 5. Contoh: ABCDE</div>`;
+if(k=='peta')return `<div class="scene">${peta()}</div><div class="rule">Mulai dari S (kotak B5). Ikuti langkah ini satu per satu:<ol><li>Naik 3 langkah.</li><li>Ke kanan 3 langkah.</li><li>Turun 2 langkah.</li><li>Ke kiri 4 langkah.</li><li>Naik 1 langkah.</li><li>Ke kanan 2 langkah.</li></ol></div><div class="q">Di kotak mana kalian berhenti? Ketik huruf kolom lalu angka baris, misalnya A1. Baris 1 ada di bagian atas.</div>`;
+return `<div class="scene">${IC.pintu}</div><div class="q">Pintu butuh satu kalimat bermakna dari semua kata kunci. Kata-kata di layar tidak berurutan, jadi susun sendiri. Kalian boleh menebak sebelum semua kata terbuka!</div>`}
+function puzzle(k){const sv=S.solved[k],pn=k=='pintu';
+const inp=k=='panel'?'':`<input type="text" id="ans" placeholder="${pn?'Ketik kalimat kunci':'Jawaban'}" onkeydown="if(event.key=='Enter')check()" aria-label="Jawaban">`;
+const msg=sv?`<p class="ok">Benar! Kata kunci yang kalian dapat: <span class="px" style="font-size:12px">${WD[k]}</span></p>`:`<p class="err">${esc(S.msg)}</p>`;
+return `<div class="panel ${S.bad?'shake':''}"><h2>${OB[k].n}</h2>${body(k)}${sv?msg:inp+msg}${sv?'':`<button class="btn" onclick="check()">${k=='panel'?'Periksa panel':pn?'Buka pintu':'Jawab'}</button>${pn?'':'<button class="btn alt" onclick="hint()">Butuh bantuan?</button>'}`}<button class="btn alt" onclick="back()">Kembali ke ruangan</button>${S.shown[k]&&!sv?`<div class="hint">${OB[k].h}</div>`:''}</div>`}
+function render(){clearInterval(T);let h='';
+if(S.ph=='start'){
+h=`<h1>Pixel Escape Room</h1><div class="panel"><h2>Misi Bersama</h2><p>Kalian terkunci di sebuah ruangan dungeon. <b>Satu orang share screen</b>, semua anggota grup memecahkan teka-teki bersama dari layar yang sama.</p>
+<div class="rule"><b>Misi:</b> selesaikan 6 kegiatan di ruangan. Tiap kegiatan memberi satu kata kunci. Susun keenam kata menjadi satu kalimat bermakna untuk membuka pintu. Urutannya tidak diberi tahu, jadi kalian harus menebak!</div>
+<div class="rule"><b>Saran peran kerja (7 orang):</b> Kapten, Juru Ketik, Pengamat, Penghitung, Pencatat, Penjaga Waktu, dan Penengah (memastikan semua suara didengar). Ini hanya cara bekerja, bukan petunjuk rahasia.</div>
+<p class="mu">Enam kegiatan bisa dikerjakan bersamaan. Bagilah grup jadi tim kecil, lalu gabungkan hasilnya di pintu.</p>
+<label class="mu" for="gn">Nama grup</label><input type="text" id="gn" maxlength="24" value="${esc(S.g)}"><p class="err">${esc(S.msg)}</p><button class="btn" onclick="begin()">Mulai, jalankan timer</button></div>`}
+else if(S.ph=='win'){
+const line=`Grup ${S.g} berhasil keluar dalam ${clock()}, bantuan dipakai ${S.hints}x.${S.early?` Menebak kalimat kunci saat baru ${S.early} dari 6 kata terbuka!`:''}`;
+h=`<div class="hud"><h1>Pixel Escape Room</h1></div><div class="panel" style="text-align:center">${CHEST}<h2 style="color:var(--torch);margin:12px 0">KALIAN KELUAR!</h2><p>Waktu <b>${clock()}</b> · Bantuan <b>${S.hints}x</b></p>${S.early?`<p class="ok">Tebakan ajaib! Kalian menebak kalimatnya saat baru ${S.early} dari 6 kata terbuka.</p>`:''}<p class="mu">Kalimat kuncinya: <b>KERJA SAMA MEMBUAT MIMPI JADI NYATA</b></p><p class="mu">Salin teks ini dan tempel di chat Zoom ke host.</p><input type="text" id="rs" readonly value="${esc(line)}" onfocus="this.select()"><button class="btn" onclick="cp()">Salin hasil</button><button class="btn alt" onclick="again()">Main lagi</button></div>`}
+else{h=`<div class="hud"><h1>Pixel Escape Room</h1><span class="tm" id="tm">${clock()}</span></div>
+<div class="words" aria-label="Kata kunci yang ditemukan">KATA KUNCI: ${ORD.map(k=>S.solved[k]?`<b>${WD[k]}</b>`:'<b class="no">???</b>').join('')}</div>
+<div class="objs">${[...ORD,'pintu'].map(k=>`<button class="obj ${S.solved[k]?'done':''} ${S.open==k?'cur':''}" onclick="openO('${k}')">${IC[k]}<b>${OB[k].n}</b><small>${S.solved[k]?'selesai':k=='pintu'?nS()+'/6 kata':'belum selesai'}</small></button>`).join('')}</div>
+${S.open?puzzle(S.open):'<p class="mu">Klik sebuah benda di ruangan untuk memeriksanya.</p>'}`}
+S.bad=false;$('#app').innerHTML=h;
+if(S.ph=='play'){T=setInterval(()=>{const e=$('#tm');if(e)e.textContent=clock()},1000);const a=$('#ans');a&&a.focus()}}
+render();
+</script></body></html>
